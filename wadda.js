@@ -22,6 +22,23 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
+var isIPhone = (new RegExp( "iPhone", "i" )).test(
+	navigator.userAgent
+);
+
+var getTouchEvent = function( event ){
+	// Check to see if we are in the iPhont. If so,
+	// grab the native touch event. By its nature,
+	// the iPhone tracks multiple touch points; but,
+	// to keep this demo simple, just grab the first
+	// available touch event.
+	return(
+		isIPhone ?
+			window.event.targetTouches[ 0 ] :
+			event
+	);
+};
+
 var Wadda = function(img, opts){
 	var me = this;
 	me.conf = {
@@ -56,12 +73,16 @@ var Wadda = function(img, opts){
 	me.doZoom = false;
 	me.setZoom(me.conf.zoom);
 	
-	listenOn(me.image, 'mousedown', me.mouseDown.scope(me));
-	listenOn(me.image, 'mousemove', me.mouseMove.scope(me));
-	listenOn(me.canv,  'mousemove', me.mouseMove.scope(me));
+	downEvent = isIPhone ? "touchstart" : "mousedown"
+	moveEvent = isIPhone ? "touchmove" : "mousemove"
+	upEvent = isIPhone ? "touchend" : "mouseup"
 	
-	listenOn(me.image, 'mouseup', me.mouseUp.scope(me));
-	listenOn(document.body, 'mouseup', me.mouseUp.scope(me));
+	listenOn(me.image, downEvent, me.start.scope(me));
+	listenOn(me.image, moveEvent, me.move.scope(me));
+	listenOn(me.canv,  moveEvent, me.move.scope(me));
+	
+	listenOn(me.image, upEvent, me.end.scope(me));
+	listenOn(document.body, upEvent, me.end.scope(me));
 	
 	return me;
 };
@@ -98,6 +119,7 @@ Wadda.prototype = {
 	
 	cursorWithinBounds: function(e){
 		var me = this;
+		var touch = getTouchEvent( e );
 		
 		var offsetOf = function(type, el){
 			if( !el || !el.offsetParent || (type !='Left' &&  type!='Top') ){
@@ -112,8 +134,8 @@ Wadda.prototype = {
 			return ret;
 		};
 		
-		var posX = e.pageX;
-		var posY = e.pageY;
+		var posX = touch.pageX;
+		var posY = touch.pageY;
 		var minX = offsetOf('Left', me.image);
 		var minY = offsetOf('Top', me.image);
 		var maxX = minX + me.image.clientWidth;
@@ -132,13 +154,13 @@ Wadda.prototype = {
 		me.imgCanv = null;
 	},
 	
-	mouseDown: function(e){
+	start: function(e){
 		var me = this;
 		if(!me.imgCanv){ return; }
 		me.canv.style.display = 'block';
 		me.canv.style.zIndex = 99999;
 		me.doZoom = true;
-		me.mouseMove(e);
+		me.move(e);
 		if(e.preventDefault){
 			e.preventDefault();
 		}else{
@@ -146,13 +168,15 @@ Wadda.prototype = {
 		}
 	},
 	
-	mouseUp: function(e){
+	end: function(e){
 		var me = this;
 		me.canv.style.display = 'none';
 		me.doZoom = false;
 	},
 	
-	mouseMove: function(e){
+	move: function(e){
+		var touch = getTouchEvent( e );
+		
 		var me = this;
 		if(!me.doZoom || !me.imgCanv){
 			return;
@@ -161,8 +185,9 @@ Wadda.prototype = {
 			me.mouseUp(e);
 			return;
 		}
-		var posX = e.pageX;
-		var posY = e.pageY;
+		
+		var posX = touch.pageX;
+		var posY = touch.pageY;
 		var centerX = me.canv.width/2;
 		var centerY = me.canv.height/2;
 		var clW = me.canv.width/2;
