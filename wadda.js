@@ -229,7 +229,7 @@ Wadda.prototype = {
 			ctx.globalCompositeOperation = 'destination-atop';
 			var gradObj = ctx.createRadialGradient(centerX,centerY,0, centerX, centerY,clW);
 			gradObj.addColorStop(0.5, "rgba(0,0,0,1)");
-			gradObj.addColorStop(1, "rgba(0,0,0,0.1)");
+			gradObj.addColorStop(1, "rgba(0,0,0,0)");
 			ctx.fillStyle = gradObj;
 			ctx.beginPath();
 			ctx.arc(centerX, centerY, clW, 0, Math.PI*2, true); 
